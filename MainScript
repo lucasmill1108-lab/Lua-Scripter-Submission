@@ -1,0 +1,101 @@
+local Data = nil
+local Functions = nil
+
+task.spawn(function()
+	 Data = require(script.Data)
+	 Functions = require(script.Functions)
+end)
+
+
+local Players = game:GetService("Players")
+
+Players.PlayerAdded:Connect(function(Player)
+	delay(5, function()
+		local Rank = Player:WaitForChild("Rank")
+		print(Data.Ranks[Rank.Value])
+		if Data.Ranks[Rank.Value] >= 2 then
+			local AdminUI = script.AdminUI:Clone()
+			AdminUI.Parent = Player:WaitForChild("PlayerGui")
+		end
+	end)
+end)
+
+local Fly = script.FlyScript
+Fly.Parent = game.StarterPlayer.StarterCharacterScripts
+
+local function OnChat(player, chat)
+	local Rank = player:WaitForChild("Rank")
+
+	local parts = string.split(chat, " ")
+	local firstPart = parts[1]
+
+	if firstPart and string.sub(firstPart, 1, 1) == "/" then
+		local commandName = string.lower(string.sub(firstPart, 2))
+
+		for _, Command in pairs(Data.Commands) do
+			if commandName == _ or table.find(Command.Names, commandName) then
+				if Data.Ranks[Rank.Value] < Command.Rank then return end
+
+				local args = {}
+				local index = 2
+
+				for _, callType in ipairs(Command.Calls) do
+					if callType == "Player" then
+						local targetName = string.lower(parts[index])
+						index += 1
+						local PlayerTable = {}
+
+						for _, v in pairs(Players:GetPlayers()) do
+							local nameMatch = string.lower(v.Name) == targetName or string.lower(v.DisplayName) == targetName
+
+							if nameMatch or targetName == "me" and v == player or targetName == "all" or (targetName == "others" and v ~= player) then
+								if targetName == "me" then
+									table.insert(PlayerTable, player)
+								elseif targetName == "all" then
+									PlayerTable = Players:GetPlayers()
+									break
+								elseif targetName == "others" then
+									for _, other in ipairs(Players:GetPlayers()) do
+										if other ~= player then
+											table.insert(PlayerTable, other)
+										end
+									end
+									break
+								else
+									table.insert(PlayerTable, v)
+								end
+							end
+						end
+
+						table.insert(args, PlayerTable)
+
+					elseif callType == "String" then
+						table.insert(args, parts[index])
+						index += 1
+					elseif callType == "LongString" then
+						table.insert(args, table.concat(parts, " ", index))
+						break
+					end
+				end
+
+
+				local funcName = _
+				if type(Command) == "table" then
+					funcName = Command.Names[1]
+				end
+
+
+				if Functions.Functions[funcName] then
+					Functions.Functions[funcName](player, unpack(args))
+				end
+			end
+		end
+	end
+end
+
+
+Players.PlayerAdded:Connect(function(player)
+	player.Chatted:Connect(function(message)
+		OnChat(player, message)
+	end)
+end)
