@@ -1,0 +1,542 @@
+local module = {}
+
+local Data = require(script.Parent.Data)
+local Bans = require(script.Parent.Bans)
+local Inv = require(game.ReplicatedStorage.Modules.Inventory)
+local ErrorMsg = game.ReplicatedStorage.AdminEvents:FindFirstChild("ErrorMsg")
+local Fly = game.ReplicatedStorage.AdminEvents.Fly
+local Ban = game.ReplicatedStorage.AdminEvents.Ban
+
+local AbilityModule = require(game.ReplicatedStorage.Modules.Abilities)
+
+
+local TweenService = game:GetService("TweenService")
+
+local function explode(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		local Charater = game.Workspace:FindFirstChild(Player.Name)
+		local Explosion = Instance.new("Explosion", Charater)
+		Explosion.Position = Charater:FindFirstChild("HumanoidRootPart").Position
+	end
+
+end
+
+local function kill(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		local Charater = game.Workspace:FindFirstChild(Player.Name)
+		Charater:FindFirstChild("Humanoid").Health = 0
+	end
+end
+
+local function kick(Firer, PlayerTable, OtherThing)
+	for _, Player in pairs(PlayerTable) do
+		Player:Kick(OtherThing)
+	end
+end
+
+local function give(Firer, PlayerTable, OtherThing)
+	local Tools = script.Parent.Tools
+	if Tools:FindFirstChild(OtherThing) then
+		for _, Player in pairs(PlayerTable) do
+			local ToolClone = Tools:FindFirstChild(OtherThing):Clone()
+			ToolClone.Parent = Player.Backpack
+		end
+	elseif OtherThing == "all" then
+		for i, Tool in pairs(Tools:GetChildren()) do
+			for _, Player in pairs(PlayerTable) do
+				local ToolClone = Tool:Clone()
+				ToolClone.Parent = Player.Backpack
+			end
+		end
+	else
+		ErrorMsg:FireClient(Firer, OtherThing .. " does not exist")
+	end
+end
+
+local function to(Firer, PlayerTable)
+	local FirerCharacter = game.Workspace:FindFirstChild(Firer.Name)
+	local FirerRoot = FirerCharacter:FindFirstChild("HumanoidRootPart")
+	for _, Player in pairs(PlayerTable) do
+		local Charater = game.Workspace:FindFirstChild(Player.Name)
+		local Root = Charater:FindFirstChild("HumanoidRootPart")
+		FirerRoot.Position = Root.Position
+		break
+	end
+end
+
+local function bring(Firer, PlayerTable)
+	local FirerCharacter = game.Workspace:FindFirstChild(Firer.Name)
+	local FirerRoot = FirerCharacter:FindFirstChild("HumanoidRootPart")
+	for _, Player in pairs(PlayerTable) do
+		if Player ~= Firer then
+			local Charater = game.Workspace:FindFirstChild(Player.Name)
+			local Root = Charater:FindFirstChild("HumanoidRootPart")
+			Root.Position = FirerRoot.Position
+		end
+	end
+end
+
+local function fly(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		Fly:FireClient(Player, true)
+	end
+end
+
+
+local function unfly(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		Fly:FireClient(Player, false)
+	end
+end
+
+
+local function announce(Firer, PlayerTable, String)
+	for _, Player in pairs(PlayerTable) do
+		local PlayerGui = Player:FindFirstChild("PlayerGui")
+		local Annoucement = script.Announcement:Clone()
+		Annoucement.Parent = PlayerGui:FindFirstChild("AdminUI")
+
+		local filteredMessage = game:GetService("Chat"):FilterStringForBroadcast(String, Player)
+
+		Annoucement.Text.Text = filteredMessage
+		Annoucement.Player.Text = Firer.Name
+
+		local ImageSize = Enum.ThumbnailSize.Size420x420 
+		local ImageType = Enum.ThumbnailType.HeadShot 
+
+		local content = game.Players:GetUserThumbnailAsync(Firer.UserId, ImageType, ImageSize)
+
+		Annoucement.PlayerIcon.Image = content
+
+		game:GetService("Debris"):AddItem(Annoucement, 5)
+	end
+end
+
+local function rank(Firer, PlayerTable, String)
+	if Data.Ranks[String] then
+		for _, Player in pairs(PlayerTable) do
+
+			local Rank = Player:FindFirstChild("Rank")
+			if Data.Ranks[Rank.Value] < 5 then
+				Rank.Value = String
+			else
+				ErrorMsg:FireClient(Firer, "Cant change owner's rank")
+				break
+			end
+		end
+	else
+		ErrorMsg:FireClient(Firer, String .. " rank does not exist")
+	end
+
+end
+
+local function kidnap(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		local Charater = game.Workspace:FindFirstChild(Player.Name)
+		local Root = Charater:FindFirstChild("HumanoidRootPart")
+
+		local KidnapVan = script.Van:Clone()
+		KidnapVan.Parent = workspace
+
+		KidnapVan.Position = Root.Position
+
+		local Weld = Instance.new("WeldConstraint", Root)
+		Weld.Part0 = Root
+		Weld.Part1 = KidnapVan
+
+		local targetCFrame = Root.CFrame * CFrame.new(0, 0, -400)
+
+		local tweenInfo = TweenInfo.new(
+			10, 
+			Enum.EasingStyle.Linear,
+			Enum.EasingDirection.Out
+		)
+
+
+		local tween = TweenService:Create(KidnapVan, tweenInfo, {CFrame = targetCFrame})
+		tween:Play()
+
+		tween.Completed:Connect(function()
+			local Explosion = Instance.new("Explosion", Root)
+			Explosion.Position = Root.Position
+		end)
+
+	end
+end
+
+local function invisible(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		local Charater = game.Workspace:FindFirstChild(Player.Name)
+		for i, v in pairs(Charater:GetDescendants()) do
+			if v:IsA("Part") or v:IsA("MeshPart") or v:IsA("BasePart") then
+				v.Transparency = 1
+			end
+		end
+	end
+end
+
+
+local function visible(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		local Charater = game.Workspace:FindFirstChild(Player.Name)
+		for i, v in pairs(Charater:GetDescendants()) do
+			if v:IsA("Part") or v:IsA("MeshPart") or v:IsA("BasePart") then
+				if v.Name ~= "HumanoidRootPart" then
+					v.Transparency = 0
+				end
+			end
+		end
+	end
+end
+
+
+local function sit(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		local Character = game.Workspace:FindFirstChild(Player.Name)
+		local Huma = Character:FindFirstChild("Humanoid")
+		Huma.Sit = true
+	end
+end
+
+local function jail(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		local Character = game.Workspace:FindFirstChild(Player.Name)
+		local Root = Character:FindFirstChild("HumanoidRootPart")
+
+		local Jail = script.Jail:Clone()
+		Jail.Parent = Character
+		Jail:PivotTo(Root.CFrame)
+
+	end
+end
+
+local function unjail(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		local Character = game.Workspace:FindFirstChild(Player.Name)
+		local Jail = Character:FindFirstChild("Jail")
+		Jail:Destroy()
+	end
+end
+
+local function speed(Firer, PlayerTable, String)
+	for _, Player in pairs(PlayerTable) do
+		local Character = game.Workspace:FindFirstChild(Player.Name)
+		local Huma = Character:FindFirstChild("Humanoid")
+		Huma.WalkSpeed = String
+	end
+end
+
+local function god(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		local Character = game.Workspace:FindFirstChild(Player.Name)
+		local Huma = Character:FindFirstChild("Humanoid")
+		Huma.MaxHealth = math.huge
+		Huma.Health = math.huge
+	end
+end
+
+local function forcefield(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		local Character = game.Workspace:FindFirstChild(Player.Name)
+		local FF = Instance.new("ForceField", Character)
+	end
+end
+
+local function title(Firer, PlayerTable, String)
+	for _, Player in pairs(PlayerTable) do
+		local Character = game.Workspace:FindFirstChild(Player.Name)
+
+		if Character:FindFirstChild("HumanoidRootPart"):FindFirstChild("Title") then
+			Character:FindFirstChild("HumanoidRootPart"):FindFirstChild("Title"):Destroy()
+		end
+
+		local filteredMessage = game:GetService("Chat"):FilterStringForBroadcast(String, Player)
+
+		local Title = script.Title:Clone()
+		Title.Parent = Character:FindFirstChild("HumanoidRootPart")
+		Title.Text.Text = filteredMessage
+
+	end
+end
+
+
+local function add(Firer, PlayerTable, String, String2)
+	for _, Player in pairs(PlayerTable) do
+		for i, item in pairs(Player:GetDescendants()) do
+			if item.Name == String then
+				item.Value += String2
+			end
+		end
+
+	end
+end
+
+local function ban(Firer, OfflinePlayer, String, String2)
+
+	local Players = game:GetService("Players")
+	local PlayerId = Players:GetUserIdFromNameAsync(OfflinePlayer)
+
+	if not PlayerId then 
+		return
+	end
+
+	local config: BanConfigType = {
+		UserIds = {PlayerId},
+		Duration = tonumber(String),
+		DisplayReason = String2,
+		PrivateReason = String2,
+		ExcludeAltAccounts = true,
+		ApplyToUniverse = true
+	}
+
+	Players:BanAsync(config)
+	Bans.BanPlayer(OfflinePlayer)
+
+end
+
+local function unban(Firer, OfflinePlayer)
+
+	local Players = game:GetService("Players")
+	local PlayerId = Players:GetUserIdFromNameAsync(OfflinePlayer)
+
+	local userIdToUnban = PlayerId
+	local config = {
+		UserIds = {userIdToUnban},
+		ApplyToUniverse = true
+	}
+	Players:UnbanAsync(config)
+	Bans.UnBanPlayer(OfflinePlayer)
+
+end
+
+local function poop(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		local Character = game.Workspace:FindFirstChild(Player.Name)
+		local Root = Character:FindFirstChild("HumanoidRootPart")
+
+		Root.Anchored = true
+
+		local PooSound = script.poop:Clone()
+		PooSound.Parent = Root
+		local PushSound = script.pushing:Clone()
+		PushSound.Parent = Root
+		PushSound:Play()
+		game:GetService("Debris"):AddItem(PushSound, 3)
+
+		local Face = Character:FindFirstChild("Head"):FindFirstChild("face")
+		if Face then
+			Face.Texture = "rbxassetid://140699179741618"
+		end
+
+
+		delay(2, function()
+			PooSound:Play()
+			game:GetService("Debris"):AddItem(PooSound, 3)
+			local PooModel = script.PooModel:Clone()
+			PooModel.Parent = workspace
+			PooModel.Position = Root.Position + Vector3.new(0,-4,0)
+
+			TweenService:Create(PooModel.SpecialMesh, TweenInfo.new(4), {Scale = Vector3.new(5,5,5)}):Play()
+			TweenService:Create(PooModel, TweenInfo.new(4), {Position = Root.Position + Vector3.new(0,-2,0)}):Play()
+
+			delay(4.5, function()
+				Character:FindFirstChild("Humanoid").Health = 0
+				PooModel.Anchored = false
+				local Explode = Instance.new("Explosion", Root)
+				Explode.Position = Root.Position
+
+				local SplatSound = script.Splat:Clone()
+				SplatSound.Parent = Root
+
+				game:GetService("Debris"):AddItem(SplatSound, 3)
+
+				SplatSound:Play()
+
+				local PoopUI = script.PoopUI:Clone()
+				PoopUI.Parent = Player:FindFirstChild("PlayerGui")
+
+				TweenService:Create(PoopUI.ImageLabel, TweenInfo.new(0.5), {ImageTransparency = 0}):Play()
+
+				game:GetService("Debris"):AddItem(PooModel, 3)
+				game:GetService("Debris"):AddItem(PoopUI, 2)
+			end)
+
+			game:GetService("Debris"):AddItem(PooModel, 8)
+		end)
+
+
+
+	end
+end
+
+local function bighead(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		local Character = game.Workspace:FindFirstChild(Player.Name)
+		local Humanoid = Character:FindFirstChild("Humanoid")
+		Humanoid:WaitForChild("HeadScale").Value = 2
+	end
+end
+
+local function fat(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		local Character = game.Workspace:FindFirstChild(Player.Name)
+		local Humanoid = Character:FindFirstChild("Humanoid")
+		Humanoid:WaitForChild("BodyWidthScale").Value = 2
+	end
+end
+
+local function size(Firer, PlayerTable, String)
+	for _, Player in pairs(PlayerTable) do
+		local Character = game.Workspace:FindFirstChild(Player.Name)
+		local Humanoid = Character:FindFirstChild("Humanoid")
+		Humanoid:WaitForChild("BodyWidthScale").Value = tonumber(String)
+		Humanoid:WaitForChild("HeadScale").Value = tonumber(String)
+		Humanoid:WaitForChild("BodyDepthScale").Value = tonumber(String)
+		Humanoid:WaitForChild("BodyHeightScale").Value = tonumber(String)
+		Humanoid:WaitForChild("BodyProportionScale").Value = tonumber(String)
+		Humanoid:WaitForChild("BodyTypeScale").Value = tonumber(String)
+	end
+end
+
+local function flashbang(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		local PlayerGui = Player:FindFirstChild("PlayerGui")
+		local Flash = script.Flash:Clone()
+		Flash.Parent = PlayerGui
+
+		delay(1, function()
+			TweenService:Create(Flash.Frame, TweenInfo.new(3), {Transparency = 1}):Play()
+		end)
+
+		game:GetService("Debris"):AddItem(Flash, 5)
+	end
+end
+
+local function idiot(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		require(8222129769).youareanidiot(Player.Name)
+	end
+end
+
+local function hacker(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		require(10557341183).alert(Player.Name, "you got pwned kid")
+	end
+end
+
+local function highlight(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		local Character = game.Workspace:FindFirstChild(Player.Name)
+		local Highlight = Instance.new("Highlight", Character)
+	end
+end
+
+local function setspawn(Firer, PlayerTable)
+	local FCharacter = game.Workspace:FindFirstChild(Firer.Name)
+	local FRoot = FCharacter:FindFirstChild("HumanoidRootPart")
+
+	for _, Player in pairs(PlayerTable) do
+
+		if not Player:FindFirstChild("SpawnPoint") then
+			local SpawnValue = Instance.new("CFrameValue", Player)
+			SpawnValue.Name = "SpawnPoint"
+		end
+
+		local SpawnValue = Player:FindFirstChild("SpawnPoint")
+		SpawnValue.Value = FRoot.CFrame
+
+		Player.CharacterAdded:Connect(function(Character)
+			local Root = Character:FindFirstChild("HumanoidRootPart")
+
+			task.delay(1, function()
+				Root.CFrame = SpawnValue.Value
+			end)
+		end)
+
+	end
+end
+
+local function profile(Firer, PlayerTable, String, String2)
+	for _, Player in pairs(PlayerTable) do
+		local DataModule = require(game.ServerScriptService.Data.DataModule)
+		if DataModule.Get(Player, String) then
+			local indice = DataModule.Get(Player, String)
+			if type(indice) == "number" then
+				DataModule.Set(Player, String, tonumber(String2))
+			elseif type(indice) == "table" then
+				if String == "OwnedKnives" then
+					if game.ReplicatedStorage.Knives:FindFirstChild(String2) then
+						DataModule.Insert(Player, String, String2)
+						local InvModule = require(game.ReplicatedStorage.Modules.Inventory)
+						InvModule.UpdateKnives(Player)
+					else
+						ErrorMsg:FireClient(Firer, String2 .. " is not a thing")
+					end
+				elseif String == "OwnedAbilities" then
+					if AbilityModule.Abilities[String2] then
+						DataModule.Insert(Player, String, String2)
+						local InvModule = require(game.ReplicatedStorage.Modules.Inventory)
+						InvModule.UpdateAbilites(Player)
+					else
+						ErrorMsg:FireClient(Firer, String2 .. " is not a thing")
+					end
+				end
+			elseif type(indice) == "string" then
+				DataModule.Set(Player, String, tostring(String2))
+			end
+
+		else
+			ErrorMsg:FireClient(Firer, String .. " is not a thing")
+		end
+	end
+end
+
+local function resetinventory(Firer, PlayerTable)
+	for _, Player in pairs(PlayerTable) do
+		local DataModule = require(game.ServerScriptService.Data.DataModule)
+		DataModule.Set(Player, "Knife", "Default")
+		DataModule.Set(Player, "OwnedKnives", {"Default"})
+		Inv.UpdateKnives(Player)
+	end
+
+end
+
+module.Functions = {
+	["explode"] = explode,
+	["speed"] = speed,
+	["kill"] = kill,
+	["to"] = to,
+	["bring"] = bring,
+	["kick"] = kick,
+	["give"] = give,
+	["fly"] = fly,
+	["unfly"] = unfly,
+	["kidnap"] = kidnap,
+	["invisible"] = invisible,
+	["visible"] = visible,
+	["announce"] = announce,
+	["sit"] = sit,
+	["jail"] = jail,
+	["unjail"] = unjail,
+	["god"] = god,
+	["forcefield"] = forcefield,
+	["title"] = title,
+	["add"] = add,
+	["poop"] = poop,
+	["bighead"] = bighead,
+	["fat"] = fat,
+	["size"] = size,
+	["flashbang"] = flashbang,
+	["hacker"] = hacker,
+	["highlight"] = highlight,
+	["idiot"] = idiot,
+	["profile"] = profile,
+	["resetinventory"] = resetinventory,
+	["setspawn"] = setspawn,
+	["rank"] = rank,
+	["ban"] = ban,
+	["unban"] = unban,
+}
+
+
+return module
