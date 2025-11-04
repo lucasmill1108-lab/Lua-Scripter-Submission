@@ -1,0 +1,47 @@
+local module = {}
+
+module.Commands = {
+	["explode"] = {Rank = 1, Names = {"explode", "plode", "boom"}, Calls = {"Player"}},
+	["kill"] = {Rank =1, Names = {"kill", "death"}, Calls = {"Player"}},
+	["to"] = {Rank = 1, Names = {"to", "teleportto"}, Calls = {"Player"}},
+	["bring"] = {Rank = 1, Names = {"bring", "teleport"}, Calls = {"Player"}},
+	["kick"] = {Rank = 1, Names = {"kick", "exile"}, Calls = {"Player", "LongString"}},
+	["give"] = {Rank = 1, Names = {"give", "tool"}, Calls = {"Player", "String"}},
+	["fly"] = {Rank = 1, Names = {"fly", "flight"}, Calls = {"Player"}},
+	["unfly"] = {Rank = 1, Names = {"unfly", "unflight"}, Calls = {"Player"}},
+	["kidnap"] = {Rank = 1, Names = {"kidnap", "candyvan"}, Calls = {"Player"}},
+	["invisible"] = {Rank = 1, Names = {"invisible", "invis"}, Calls = {"Player"}},
+	["visible"] = {Rank = 1, Names = {"visible", "vis", "uninvis", "uninvisible"}, Calls = {"Player"}},
+	["announce"] = {Rank = 1, Names = {"announce", "an"}, Calls = {"Player", "LongString"}},
+	["sit"] = {Rank = 1, Names = {"sit", "seat"}, Calls = {"Player"}},
+	["jail"] = {Rank = 1, Names = {"jail", "prison"}, Calls = {"Player"}},
+	["unjail"] = {Rank = 1, Names = {"unjail", "unprison"}, Calls = {"Player"}},
+	["speed"] = {Rank = 1, Names = {"speed", "walkspeed"}, Calls = {"Player", "String"}},
+	["god"] = {Rank = 1, Names = {"god", "invincable"}, Calls = {"Player"}},
+	["forcefield"] = {Rank = 1, Names = {"forcefield", "ff"}, Calls = {"Player"}},
+	["title"] = {Rank = 1, Names = {"title", "name"}, Calls = {"Player", "LongString"}},
+	["add"] = {Rank = 2, Names = {"add", "plus"}, Calls = {"Player", "String", "String"}},
+	["poop"] = {Rank = 1, Names = {"poop", "poo"}, Calls = {"Player"}},
+	["bighead"] = {Rank = 1, Names = {"bighead", "bh"}, Calls = {"Player"}},
+	["fat"] = {Rank = 1, Names = {"fat", "wide"}, Calls = {"Player"}},
+	["size"] = {Rank = 1, Names = {"size", "big"}, Calls = {"Player", "String"}},
+	["flashbang"] = {Rank = 1, Names = {"flashbang", "flash"}, Calls = {"Player"}},
+	["idiot"] = {Rank = 1, Names = {"idiot", "youareanidiot"}, Calls = {"Player"}},
+	["hacker"] = {Rank = 1, Names = {"hacker", "messagefromhacker"}, Calls = {"Player"}},
+	["highlight"] = {Rank = 1, Names = {"highlight", "high"}, Calls = {"Player"}},
+	["setspawn"] = {Rank = 1, Names = {"setspawn", "ss", "spawn"}, Calls = {"Player"}},
+	["ban"] = {Rank = 3, Names = {"ban"}, Calls = {"String", "String", "LongString"}},
+	["unban"] = {Rank = 3, Names = {"unban"}, Calls = {"String"}},
+	["rank"] = {Rank = 4, Names = {"rank", "status"}, Calls = {"Player", "String"}},
+}
+
+
+module.Ranks = {
+	["player"] = 1,
+	["mod"] = 2,
+	["admin"] = 3,
+	["superadmin"] = 4,
+	["owner"] = 5,
+}
+
+return module
